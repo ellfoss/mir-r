@@ -18,6 +18,7 @@ class Api
 
 	private static function wargaming($url)
 	{
+		Log::out('url = '.$url);
 		$time = microtime(true) - self::$last_query_time;
 		if ($time < self::$query_interval) usleep((int)((self::$query_interval - $time) * 1000000));
 		try {
@@ -39,7 +40,7 @@ class Api
 
 	private static function request($url, $field = null)
 	{
-		Log::out('query = '.$url);
+		Log::out('url = '.$url);
 		if ($url && $url != '') {
 			try {
 				$str = '';

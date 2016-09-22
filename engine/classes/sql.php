@@ -172,21 +172,76 @@ class Sql
 		if ($type == 'stat' && gettype($opt) == 'array') $query .= " WHERE `date` >= '" . $opt['init'] . "' AND `date` <= '" . $opt['fin'] . "'" . (isset($opt['member']) ? " AND `id` = '" . $opt['member'] . "'" : "");
 		if ($type == 'medal_list') return self::arr_to_list(self::query("SELECT `id` FROM `" . $game . "_medals`"), 'id');
 		if ($type == 'technic_list') return self::arr_to_list(self::query("SELECT `id` FROM `" . $game . "_technics`"), 'id');
-		if($type == 'data'){
-			if($opt) {
+		if ($type == 'data') {
+			if ($opt) {
 				if ($val) $query = "UPDATE `" . $game . "_data` SET `value` = '$val' WHERE `variable` = '$opt'";
 				else $query = "SELECT * FROM `" . $game . "_data` WHERE `variable` = '$opt'";
-			}else $query = "SELECT * FROM `$table`";
+			} else $query = "SELECT * FROM `$table`";
 		}
 		return self::query($query);
 	}
 
-	public static function medal($game, $id, $type = null)
+	public static function medal($game, $medal, $field = null, $value = null)
 	{
-		if ($type) {
-			if ($type == 'options') $query = "SELECT * FROM `" . $game . "_medal_options` WHERE `id` = '$id'";
-			if ($type == 'changes') $query = "SELECT * FROM `" . $game . "_medal_changes` WHERE `id` = '$id'";
-		} else $query = "SELECT * FROM `" . $game . "_medals` WHERE `id` = '$id'";
+		$table = $game . '_medals';
+		return self::medal_query($table, $medal, $field, $value);
+	}
+
+	public static function medal_changes($game, $medal, $field = null, $value = null)
+	{
+		$table = $game . '_medal_changes';
+		$res = self::medal_query($table, $medal, $field, $value);
+		self::check_medal_changes($table, $medal);
+		return $res;
+	}
+
+	private static function check_medal_changes($table, $medal)
+	{
+		if ($res = self::query("SELECT * FROM `$table` WHERE `id` = '$medal'")) {
+			$clear = true;
+			foreach ($res as $field => $value) if ($value != null) $clear = false;
+			if ($clear) return self::query("DELETE FROM `$table` WHERE `id` = '$medal'");
+			else return false;
+		} else return true;
+	}
+
+	public static function medal_options($game, $option, $field = null, $value = null)
+	{
+		$table = $game . "_medal_options";
+		if ($option == 'numbers') {
+			$numbers = array();
+			$num = 1;
+			while (count($numbers) < 4) {
+				while ($rs = self::query("SELECT `id` FROM `$table` WHERE `id` = '$num'")) $num++;
+				$numbers[] = $num;
+				$num++;
+			}
+			return $numbers;
+		} elseif ($field == 'delete') {
+			return self::query("DELETE FROM `$table` WHERE `id` = '$option'");
+		} else return self::medal_query($table, $option, $field, $value);
+	}
+
+	private static function medal_query($table, $id, $field = null, $value = null)
+	{
+		if ($field) {
+			if (self::medal_query($table, $id)) {
+				if (is_array($field)) {
+					foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = '" . $value[$num] . "'";
+					$field = implode(",", $field);
+				}else $field = "`$field` = '$value'";
+				$query = "UPDATE `$table` SET `$field` WHERE `id` = '$id'";
+			} else {
+				if (is_array($field)) {
+					$field = "'" . implode("','", $field) . "'";
+					$value = "'" . implode("','", $value) . "'";
+				} else {
+					$field = "'" . $field . "'";
+					$value = "'" . $value . "'";
+				}
+				$query = "INSERT INTO `$table` $field";
+			}
+		} else $query = "SELECT * FROM ($field) VALUES ($value) WHERE `id` = '$id'";
 		return self::query($query);
 	}
 

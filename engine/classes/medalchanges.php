@@ -8,10 +8,16 @@
  */
 class MedalChanges extends Medal
 {
-	function __construct($game, $id, $data)
+	function __construct($game, $id)
 	{
 		$this->game = $game;
 		$this->id = $id;
-		$this->set_data($data);
+		$this->set_changes();
+	}
+
+	public function set_changes()
+	{
+		$changes = Sql::medal_changes($this->game, $this->id);
+		if ($changes) $this->set_data($changes);
 	}
 }
