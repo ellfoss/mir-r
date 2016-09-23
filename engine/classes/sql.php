@@ -200,8 +200,12 @@ class Sql
 		if ($res = self::query("SELECT * FROM `$table` WHERE `id` = '$medal'")) {
 			$clear = true;
 			foreach ($res as $field => $value) if ($value != null) $clear = false;
-			if ($clear) return self::query("DELETE FROM `$table` WHERE `id` = '$medal'");
-			else return false;
+			if ($clear) {
+				if (self::query("DELETE FROM `$table` WHERE `id` = '$medal'")) {
+					$table = substr($table, 0, -8) . 's';
+					return self::query("UPDATE `$table` SET `state` = NULL WHERE `id` = '$medal'");
+				} else return false;
+			} else return false;
 		} else return true;
 	}
 
@@ -227,22 +231,28 @@ class Sql
 		if ($field) {
 			if (self::medal_query($table, $id)) {
 				if (is_array($field)) {
-					foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = '" . $value[$num] . "'";
+					foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
 					$field = implode(",", $field);
-				}else $field = "`$field` = '$value'";
+				} else $field = "`$field` = " . self::format_value($value);
 				$query = "UPDATE `$table` SET `$field` WHERE `id` = '$id'";
 			} else {
 				if (is_array($field)) {
-					$field = "'" . implode("','", $field) . "'";
+					$field = "`" . implode("`,`", $field) . "`";
 					$value = "'" . implode("','", $value) . "'";
 				} else {
-					$field = "'" . $field . "'";
-					$value = "'" . $value . "'";
+					$field = "`" . $field . "`";
+					$value = self::format_value($value);
 				}
-				$query = "INSERT INTO `$table` $field";
+				$query = "INSERT INTO `$table` (`id`, $field) VALUES ('$id', $value)";
 			}
-		} else $query = "SELECT * FROM ($field) VALUES ($value) WHERE `id` = '$id'";
+		} else $query = "SELECT * FROM `$table` WHERE `id` = '$id'";
 		return self::query($query);
+	}
+
+	private static function format_value($value)
+	{
+		if ($value !== null) return "'" . $value . "'";
+		else return "NULL";
 	}
 
 	public static function technic($game, $id, $type = null)

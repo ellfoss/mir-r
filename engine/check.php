@@ -29,7 +29,6 @@ if (Time::check()) {
 	foreach ($list as $num => $item) {
 		if (Time::check()) {
 			$clan = new Clan($item);
-
 			if ($clan->update_time != date('Y-m-d H:i:s', $updates->$item->updated_at)) $clan->check();
 		}
 	}
