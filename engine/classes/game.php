@@ -38,6 +38,7 @@ class Game
 				if (Time::check()) $this->check_etv();
 			}
 			if (Time::check()) $this->check_medals();
+			if (Time::check()) $this->check_technics();
 		}
 	}
 
@@ -125,7 +126,6 @@ class Game
 		$etvUpdate = date('Y-m-d');
 		if ($etvUpdate != $this->data['etvUpdate']) {
 			Log::add('Проверка танковых коэффициентов');
-
 			$this->data['etvUpdate'] = $etvUpdate;
 			Sql::game($this->game, 'data', 'etvUpdate', $etvUpdate);
 			if ($etv = Api::game('wot', 'etv')) {
@@ -140,24 +140,65 @@ class Game
 
 	private function check_medals()
 	{
-		Log::add('Проверка медалей');
-		if (isset($this->data['medalSections']) && $this->game != 'wowp') {
-			$value = Sql::i18n(json_encode($this->info->achievement_sections));
-			if ($value != Sql::i18n(json_encode($this->data['medalSections']))) {
-				$this->data['medalSections'] = $this->info->achievement_sections;
-				if (Sql::game($this->game, 'data', 'medalSections', $value)) Log::add('Секции медалей обновлены');
-			}
-		}
-		if ($medals = Api::game($this->game, 'medals')) {
-			foreach ($this->medals as $number => $medal) {
-				$name = $medal->name;
-				if (isset($medals->$name)) {
-					$medal->compare($medals->$name);
-					unset($medals->$name);
+		$medalUpdate = date('Y-m-d');
+		if ($medalUpdate != $this->data['medalUpdate']) {
+			Log::add('Проверка медалей');
+			$this->data['medalUpdate'] = $medalUpdate;
+			Sql::game($this->game, 'data', 'medalUpdate', $medalUpdate);
+			if (isset($this->data['medalSections']) && $this->game != 'wowp') {
+				$value = Sql::i18n(json_encode($this->info->achievement_sections));
+				if ($value != Sql::i18n(json_encode($this->data['medalSections']))) {
+					$this->data['medalSections'] = $this->info->achievement_sections;
+					if (Sql::game($this->game, 'data', 'medalSections', $value)) Log::add('Секции медалей обновлены');
 				}
 			}
-			if (count($medals) > 0) {
+			if ($medals = Api::game($this->game, 'medals')) {
+				if($this->game == 'wows') $medals = $medals->battle;
+				foreach ($this->medals as $number => $medal) {
+					$name = $medal->name;
+					if (isset($medals->$name) || isset($medals->battle->$name)) {
+						if ($this->game == 'wows') $medal->compare($medals->battle->$name);
+						else $medal->compare($medals->$name);
+						unset($medals->$name);
+					}
+				}
+				if (count($medals) > 0) {
+					foreach ($medals as $name => $medal){
+						$number = Sql::medal($this->game, 'new');
+						$number = $number[0]['max_id'] + 1;
+						$this->medals[$number] = new Medal($this->game, $number);
+						$this->medals[$number]->compare($medal);
+						Event::game($this->game, 'new_medal', $number);
+						Log::add($this->game.' new Medal '.$medal->name);
+					}
+				}
+			}
+		}
+	}
 
+	private function check_technics()
+	{
+		$technicUpdate = date('Y-m-d');
+		if ($this->game == 'wot' || $this->game == 'wotb') $technicUpdate = date('Y-m-d H:i:s', $this->info->tanks_updated_at);
+		if ($technicUpdate != $this->data['technicUpdate']) {
+			Log::add('Проверка техники');
+			$this->data['technicUpdate'] = $technicUpdate;
+			Sql::game($this->game, 'data', 'technicUpdate', $technicUpdate);
+			if ($technics = Api::game($this->game, 'technics')) {
+				foreach ($this->technics as $number => $technic) {
+					if (isset($technics->$number)) {
+						$technic->compare($technics->$number);
+						unset($technics->$number);
+					}
+				}
+				if (count($technics) > 0) {
+					foreach ($technics as $number => $technic){
+						$this->technics[$number] = new Technic($this->game, $number);
+						$this->technics[$number]->compare($technic);
+						Event::game($this->game, 'new_technic', $number);
+						Log::add($this->game.' new Technic '.$technic->name);
+					}
+				}
 			}
 		}
 	}

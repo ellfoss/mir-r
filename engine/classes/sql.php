@@ -149,11 +149,17 @@ class Sql
 				$type = $options['clan']['type'];
 				$event = $options['clan']['event'];
 			}
-			if (isset($options['member'])) {
-				$game = "member";
-				$id = $options['member']['id'];
-				$type = $options['member']['type'];
-				$event = $options['clan']['event'];
+			if (isset($options['memb'])) {
+				$game = "memb";
+				$id = $options['memb']['id'];
+				$type = $options['memb']['type'];
+				$event = $options['memb']['event'];
+			}
+			if (isset($options['game'])) {
+				$game = $options['game']['game'];
+				$id = $options['game']['id'];
+				$type = '';
+				$event = $options['game']['event'];
 			}
 			$query = "INSERT INTO `events` (`date`, `time`, `game`, `type`, `id`, `event`) VALUES ('$date', '$time', '$game', '$type', '$id', '$event')";
 			return self::query($query);
@@ -234,7 +240,7 @@ class Sql
 					foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
 					$field = implode(",", $field);
 				} else $field = "`$field` = " . self::format_value($value);
-				$query = "UPDATE `$table` SET `$field` WHERE `id` = '$id'";
+				$query = "UPDATE `$table` SET $field WHERE `id` = '$id'";
 			} else {
 				if (is_array($field)) {
 					$field = "`" . implode("`,`", $field) . "`";
@@ -245,7 +251,64 @@ class Sql
 				}
 				$query = "INSERT INTO `$table` (`id`, $field) VALUES ('$id', $value)";
 			}
-		} else $query = "SELECT * FROM `$table` WHERE `id` = '$id'";
+		} else {
+			$query = "SELECT * FROM `$table` WHERE `id` = '$id'";
+			if ($id == 'new') $query = "SELECT MAX(`id`) AS `max_id` FROM `$table`";
+		}
+		return self::query($query);
+	}
+
+	public static function technic($game, $technic, $field = null, $value = null)
+	{
+		$table = $game . '_technics';
+		return self::technic_query($table, $technic, $field, $value);
+	}
+
+	public static function technic_changes($game, $technic, $field = null, $value = null)
+	{
+		$table = $game . '_technic_changes';
+		$res = self::technic_query($table, $technic, $field, $value);
+		self::check_technic_changes($table, $technic);
+		return $res;
+	}
+
+	private static function check_technic_changes($table, $technic)
+	{
+		if ($res = self::query("SELECT * FROM `$table` WHERE `id` = '$technic'")) {
+			$clear = true;
+			foreach ($res as $field => $value) if ($value != null) $clear = false;
+			if ($clear) {
+				if (self::query("DELETE FROM `$table` WHERE `id` = '$technic'")) {
+					$table = substr($table, 0, -8) . 's';
+					return self::query("UPDATE `$table` SET `state` = NULL WHERE `id` = '$technic'");
+				} else return false;
+			} else return false;
+		} else return true;
+	}
+
+	private static function technic_query($table, $id, $field = null, $value = null)
+	{
+		if ($field) {
+			if (self::technic_query($table, $id)) {
+				if (is_array($field)) {
+					foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
+					$field = implode(",", $field);
+				} else $field = "`$field` = " . self::format_value($value);
+				$query = "UPDATE `$table` SET $field WHERE `id` = '$id'";
+			} else {
+				if (is_array($field)) {
+					$field = "`" . implode("`,`", $field) . "`";
+					$value = "'" . implode("','", $value) . "'";
+				} else {
+					$field = "`" . $field . "`";
+					$value = self::format_value($value);
+				}
+				$query = "INSERT INTO `$table` (`id`, $field) VALUES ('$id', $value)";
+			}
+		} else {
+			$query = "SELECT * FROM `$table` WHERE `id` = '$id'";
+			if ($id == 'new') $query = "SELECT MAX(`id`) AS `max_id` FROM `$table`";
+		}
 		return self::query($query);
 	}
 
@@ -253,13 +316,6 @@ class Sql
 	{
 		if ($value !== null) return "'" . $value . "'";
 		else return "NULL";
-	}
-
-	public static function technic($game, $id, $type = null)
-	{
-		if ($type && $type == 'changes') $query = "SELECT * FROM `" . $game . "_technic_changes` WHERE `id` = '$id'";
-		else $query = "SELECT * FROM `" . $game . "_technics` WHERE `id` = '$id'";
-		return self::query($query);
 	}
 
 	public static function i18n($str)

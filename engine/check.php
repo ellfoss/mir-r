@@ -34,14 +34,14 @@ if (Time::check()) {
 	}
 }
 
-if(Time::check()) {
+if (Time::check()) {
 	Log::add('Проверка игр');
 	$games = array('wot', 'wotb', 'wowp', 'wows');
-	foreach ($games as $num => $item){
+	foreach ($games as $num => $item) {
 		$game = new Game($item);
-		if(Time::check()) $game->check();
+		if (Time::check()) $game->check();
 	}
 }
 
-Log::add('Время выполнения скрипта '.Time::script_time().' с.');
+Log::add('Время выполнения скрипта ' . Time::script_time() . ' с.');
 Log::end();

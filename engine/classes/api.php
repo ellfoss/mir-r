@@ -111,8 +111,8 @@ class Api
 			if ($param == 'medals') $url = self::$serverWoWP . 'wowp/encyclopedia/achievements/?';
 		};
 		if ($type == 'wows') {
-			if ($param == 'info' || $param === null) $url = self::$serverWoWS . 'wows/encyclopedia/info/';
-			if ($param == 'technics') $url = self::$serverWoWP . '?wows/encyclopedia/ships/?fields=ship_id_str%2Cname%2Cnation%2Ctier%2Ctype%2Cis_premium%2Cdescription%2Cimages.small&';
+			if ($param == 'info' || $param === null) $url = self::$serverWoWS . 'wows/encyclopedia/info/?';
+			if ($param == 'technics') $url = self::$serverWoWS . 'wows/encyclopedia/ships/?fields=ship_id_str%2Cname%2Cnation%2Ctier%2Ctype%2Cis_premium%2Cdescription%2Cimages.small';
 			if ($param == 'medals') $url = self::$serverWoWS . 'wows/encyclopedia/achievements/?';
 		};
 		if ($url) {

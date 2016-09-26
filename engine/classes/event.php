@@ -18,12 +18,23 @@ class Event
 		Sql::event($options);
 	}
 
-	public static function member($id, $type, $event = null){
+	public static function member($id, $type, $event = null)
+	{
 		$options = array();
 		$options['memb'] = array();
 		$options['memb']['id'] = $id;
 		$options['memb']['type'] = $type;
 		$options['memb']['event'] = $event || '';
+		Sql::event($options);
+	}
+
+	public static function game($game, $event, $id)
+	{
+		$options = array();
+		$options['game'] = array();
+		$options['game']['game'] = $game;
+		$options['game']['id'] = $id;
+		$options['game']['event'] = $event;
 		Sql::event($options);
 	}
 }
