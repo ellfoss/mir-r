@@ -12,20 +12,20 @@ Log::set_debug(true);
 Time::start();
 
 $members = array();
-$list = Sql::member_list();
-$check_clan = date('Y-m-d H:00:00', Time::$start_time);
+$list_members = Sql::member_list();
 Log::add('Проверка игроков');
-foreach ($list as $num => $item) {
+$updates = Api::member(implode('%2C', array_values($list_members)), 'update');
+foreach ($list_members as $num => $item) {
+	$checkMember = date('Y-m-d H:i:s', $updates->$item->updated_at);
 	$member = new Member($item);
-	$members[] = $member;
-	if (Time::check() && $member->check_clan != $check_clan) $member->check_member();
+	$members[$item] = $member;
+	if (Time::check() && $member->check_clan != $checkMember) $member->check_member();
 }
 
 if (Time::check()) {
 	Log::add('Проверка кланов');
 	$list = Sql::clan_list();
-	Log::add('Получение информации о кланах');
-	$updates = Api::clan(implode(',', array_values($list)), true);
+	$updates = Api::clan(implode('%2C', array_values($list)), true);
 	foreach ($list as $num => $item) {
 		if (Time::check()) {
 			$clan = new Clan($item);
@@ -40,6 +40,13 @@ if (Time::check()) {
 	foreach ($games as $num => $item) {
 		$game = new Game($item);
 		if (Time::check()) $game->check();
+		$list = Api::member(implode('%2C', array_values($list_members)), $item, 'time');
+		foreach ($list as $num => $member) {
+			$time = date('Y-m-d H:i:s', $member->last_battle_time);
+			$field = $item . '_update';
+			$last_time = $members[$num]->$field;
+			if ($time != $last_time) $members[$num]->check_state($item);
+		}
 	}
 }
 

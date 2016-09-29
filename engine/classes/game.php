@@ -42,6 +42,11 @@ class Game
 		}
 	}
 
+	public function check_stat($member)
+	{
+		
+	}
+
 	private function check_effects()
 	{
 		$effectsUpdate = date('Y-m-d');
@@ -153,7 +158,7 @@ class Game
 				}
 			}
 			if ($medals = Api::game($this->game, 'medals')) {
-				if($this->game == 'wows') $medals = $medals->battle;
+				if ($this->game == 'wows') $medals = $medals->battle;
 				foreach ($this->medals as $number => $medal) {
 					$name = $medal->name;
 					if (isset($medals->$name) || isset($medals->battle->$name)) {
@@ -163,13 +168,13 @@ class Game
 					}
 				}
 				if (count($medals) > 0) {
-					foreach ($medals as $name => $medal){
+					foreach ($medals as $name => $medal) {
 						$number = Sql::medal($this->game, 'new');
 						$number = $number[0]['max_id'] + 1;
 						$this->medals[$number] = new Medal($this->game, $number);
 						$this->medals[$number]->compare($medal);
 						Event::game($this->game, 'new_medal', $number);
-						Log::add($this->game.' new Medal '.$medal->name);
+						Log::add($this->game . ' new Medal ' . $medal->name);
 					}
 				}
 			}
@@ -192,11 +197,11 @@ class Game
 					}
 				}
 				if (count($technics) > 0) {
-					foreach ($technics as $number => $technic){
+					foreach ($technics as $number => $technic) {
 						$this->technics[$number] = new Technic($this->game, $number);
 						$this->technics[$number]->compare($technic);
 						Event::game($this->game, 'new_technic', $number);
-						Log::add($this->game.' new Technic '.$technic->name);
+						Log::add($this->game . ' new Technic ' . $technic->name);
 					}
 				}
 			}

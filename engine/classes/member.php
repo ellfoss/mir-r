@@ -18,6 +18,7 @@ class Member
 	public $clan;
 	public $role;
 	public $games;
+	public $state;
 	public $wot_update;
 	public $wotb_update;
 	public $wowp_update;
@@ -53,8 +54,16 @@ class Member
 		if ($data) {
 			foreach ($this->sync as $key => $value) {
 				$this->$key = $data[$value];
-				if ($key == 'game') $this->$key = json_decode($data[$value]);
+				if ($key == 'games') {
+					$games = json_decode($data[$value]);
+					$this->games = array();
+					foreach ($games as $num => $game){
+						$this->games[$game] = '';
+						$this->state($game);
+					}
+				}
 			}
+
 			return true;
 		} else return false;
 	}
@@ -137,7 +146,19 @@ class Member
 				$this->rights = 'guest';
 			}
 		}
-		$this->check_clan = date('Y-m-d H:00:00', time());
+		$update = Api::member($id, 'update');
+		$this->check_clan = date('Y-m-d H:i:s', $update->$id->updated_at);
 		$this->save_member($new);
+	}
+
+	public function state($game)
+	{
+		if (isset($this->games[$game])) {
+			$this->games[$game] = new State($this, $game);
+		}
+	}
+
+	public function check_state($game){
+		if(isset($this->games[$game]) && $this->games[$game] == '') $this->state($game);
 	}
 }

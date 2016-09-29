@@ -18,7 +18,7 @@ class Api
 
 	private static function wargaming($url)
 	{
-		Log::out('url = '.$url);
+		Log::out('url = ' . $url);
 		$time = microtime(true) - self::$last_query_time;
 		if ($time < self::$query_interval) usleep((int)((self::$query_interval - $time) * 1000000));
 		try {
@@ -40,7 +40,7 @@ class Api
 
 	private static function request($url, $field = null)
 	{
-		Log::out('url = '.$url);
+		Log::out('url = ' . $url);
 		if ($url && $url != '') {
 			try {
 				$str = '';
@@ -66,6 +66,7 @@ class Api
 		};
 		if ($type == 'member' && $id != null) {
 			if ($param == null) $url = self::$serverWoT . 'wgn/account/info/?account_id=' . $id;
+			if ($param == 'update') $url = self::$serverWoT . 'wot/account/info/?account_id=' . $id . '&fields=updated_at';
 			if ($param == 'clan') $url = self::$serverWoT . 'wgn/clans/membersinfo/?account_id=' . $id;
 			if ($param == 'wot') $url = self::$serverWoT . 'wot/account/info/?account_id=' . $id;
 			if ($param == 'wot_update') $url = self::$serverWoT . 'wot/account/info/?fields=updated_at&account_id=' . $id;
@@ -134,7 +135,9 @@ class Api
 				$game .= $param === null ? '' : '_' . $param;
 				return self::query('member', $member_id, $game);
 			} else {
-				return self::query('member', null, $member_id);
+				if ($game == 'update') return self::query('member', $member_id, 'update');
+				elseif ($param == 'time') return self::query('member', $member_id, $game . '_time');
+				else return self::query('member', null, $member_id);
 			}
 		} else return false;
 	}

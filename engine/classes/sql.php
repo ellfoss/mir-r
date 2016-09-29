@@ -312,6 +312,30 @@ class Sql
 		return self::query($query);
 	}
 
+	public static function stat($member, $game, $date, $field = null, $value = null)
+	{
+		$table = $game . '_stat';
+		if ($date == 'check') {
+			$query = "SELECT * FROM `$table` WHERE `id` = '$member'";
+			if (self::query($query)) return true;
+			else return false;
+		} elseif ($date == 'full') {
+			$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' ORDER BY `date` DESC LIMIT 1";
+			$res = self::query($query);
+			if ($res) return $res[0]['date'];
+			else return false;
+		} else {
+			if ($field) {
+				if ($field == 'all') $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
+				elseif (self::query("SELECT FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) $query = "UPDATE `$table` SET `$field` = '$value' WHERE `id` = '$member' AND `date` = '$date'";
+				else $query = "INSERT INTO `$table` (`date`, `id`, `$field`) VALUES ('$date', '$member', '$value')";
+			} else {
+				$query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'";
+			}
+			return self::query($query);
+		}
+	}
+
 	private static function format_value($value)
 	{
 		if ($value !== null) return "'" . $value . "'";
