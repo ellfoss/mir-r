@@ -259,24 +259,51 @@ class State
 		)
 	);
 
-	function __construct($member, $game)
+	function __construct($member, $game, $type = false)
 	{
 		$this->id = $member->id;
 		$this->game = $game;
-		if (Sql::stat($member->id, $game, 'check')) $this->set_stat();
+		if ($type == 'api') $this->set_state($type);
+		elseif (Sql::stat($member->id, $game, 'check')) $this->set_state();
 	}
 
-	function set_stat()
+	function set_state($type = false)
 	{
-		$date = Sql::stat($this->id, $this->game, 'full');
-		$stats = Sql::stat($this->id, $this->game, $date, 'all');
-		foreach ($stats as $num => $stat) {
+		if ($type == 'api') {
+			$stat = Api::member($this->id, $this->game);
+			$id = $this->id;
+			$stat = $stat->$id;
 			foreach ($this as $field => $value) {
-				$sql_field = $this->field($field, 'sql');
-				if (isset($stat[$sql_field])) {
-					if ($stat['type'] == 'full') $this->$field = 1 * $stat[$sql_field];
-					if ($stat['type'] == 'part') $this->$field += $stat[$sql_field];
+				$api_field = $this->field($field, 'api');
+				if ($api_field) {
+					$val = $this->get_object_field($stat, $api_field);
+					$this->$field = $val;
 				}
+			}
+		} else {
+			$date = Sql::stat($this->id, $this->game, 'full');
+			$stats = Sql::stat($this->id, $this->game, $date, 'all', $type == 'yesterday' ? true : false);
+			foreach ($stats as $num => $stat) {
+				foreach ($this as $field => $value) {
+					$sql_field = $this->field($field, 'sql');
+					if (isset($stat[$sql_field])) {
+						if ($stat['type'] == 'full') $this->$field = 1 * $stat[$sql_field];
+						if ($stat['type'] == 'part') $this->$field += $stat[$sql_field];
+					}
+				}
+			}
+		}
+	}
+
+	public function compare($state, $type)
+	{
+		$today = date('Y-m-d');
+		foreach ($state as $field => $value) {
+			if ($state->$field != $this->$field) {
+				$this->check_stat($today, $type);
+				$val = $state->$field;
+				if ($type == 'part' && $this->$field != null) $val = $state->$field - $this->$field;
+				Sql::stat($this->id, $this->game, $today, $this->field($field, 'sql'), $val);
 			}
 		}
 	}
@@ -303,5 +330,11 @@ class State
 		if (count($keys) == 2) return $object->$keys[0]->$keys[1];
 		if (count($keys) == 3) return $object->$keys[0]->$keys[1]->$keys[2];
 		return $object;
+	}
+
+	private function check_stat($date, $type)
+	{
+		$stat = Sql::stat($this->id, $this->game, $date);
+		if (!$stat || count($stat) == 0 || $stat['type'] != $type) Sql::stat($this->id, $this->game, $date, 'type', $type);
 	}
 }

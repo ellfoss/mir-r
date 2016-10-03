@@ -57,7 +57,7 @@ class Member
 				if ($key == 'games') {
 					$games = json_decode($data[$value]);
 					$this->games = array();
-					foreach ($games as $num => $game){
+					foreach ($games as $num => $game) {
 						$this->games[$game] = '';
 						$this->state($game);
 					}
@@ -158,7 +158,14 @@ class Member
 		}
 	}
 
-	public function check_state($game){
-		if(isset($this->games[$game]) && $this->games[$game] == '') $this->state($game);
+	public function check_state($game)
+	{
+		$old_stat = new State($this, $game, 'yesterday');
+		$new_stat = new State($this, $game, 'api');
+		$date = Sql::stat($this->id, $game, 'full');
+		$today = date('Y-m-d');
+		$type = 'part';
+		if (!$date || substr($today, -2) == '01' || substr($date, 0, 7) != substr($today, 0, 7) || $date == $today) $type = 'full';
+		$old_stat->compare($new_stat, $type);
 	}
 }

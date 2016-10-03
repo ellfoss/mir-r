@@ -326,8 +326,11 @@ class Sql
 			else return false;
 		} else {
 			if ($field) {
-				if ($field == 'all') $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
-				elseif (self::query("SELECT FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) $query = "UPDATE `$table` SET `$field` = '$value' WHERE `id` = '$member' AND `date` = '$date'";
+				$today = date('Y-m-d');
+				if ($field == 'all') {
+					if ($value === true) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$today'";
+					else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
+				} elseif (self::query("SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) $query = "UPDATE `$table` SET `$field` = '$value' WHERE `id` = '$member' AND `date` = '$date'";
 				else $query = "INSERT INTO `$table` (`date`, `id`, `$field`) VALUES ('$date', '$member', '$value')";
 			} else {
 				$query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'";
