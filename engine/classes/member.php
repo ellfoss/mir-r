@@ -57,7 +57,7 @@ class Member
 				if ($key == 'games') {
 					$games = json_decode($data[$value]);
 					$this->games = array();
-					foreach ($games as $num => $game) {
+					if ($games) foreach ($games as $num => $game) {
 						$this->games[$game] = '';
 						$this->state($game);
 					}
@@ -84,7 +84,7 @@ class Member
 		}
 	}
 
-	private function save_member($new = false)
+	public function save_member($new = false)
 	{
 		if ($new) {
 			if (Sql::member($this->id, 'new', $this)) Event::member($this->id, 'new');
@@ -115,7 +115,7 @@ class Member
 					}
 				}
 				if ($key == 'games') {
-					$val = json_encode($this->games);
+					$val = json_encode(array_values($this->games));
 					if ($val != $member[$key]) Sql::member($this->id, 'change', $this->sync[$key], $val);
 				}
 			}

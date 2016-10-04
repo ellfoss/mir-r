@@ -13,7 +13,7 @@ class Game
 	public $info;
 	public $technics;
 	public $medals;
-	public $map_medals;
+	public static $map_medals;
 
 	function __construct($game)
 	{
@@ -23,7 +23,7 @@ class Game
 		$medal_list = Sql::game($game, 'medal_list');
 		foreach ($medal_list as $num => $item) {
 			$this->medals[$item] = new Medal($game, $item);
-			$this->map_medals[$this->medals[$item]->name] = $item;
+			self::$map_medals[$game][$this->medals[$item]->name] = $item;
 		}
 		$technic_list = Sql::game($game, 'technic_list');
 		foreach ($technic_list as $num => $item) $this->technics[$item] = new Technic($game, $item);
@@ -40,11 +40,6 @@ class Game
 			if (Time::check()) $this->check_medals();
 			if (Time::check()) $this->check_technics();
 		}
-	}
-
-	public function check_stat($member)
-	{
-		
 	}
 
 	private function check_effects()

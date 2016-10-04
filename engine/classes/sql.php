@@ -320,18 +320,36 @@ class Sql
 			if (self::query($query)) return true;
 			else return false;
 		} elseif ($date == 'full') {
-			$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' ORDER BY `date` DESC LIMIT 1";
+			$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' ORDER BY `date` DESC LIMIT 2";
 			$res = self::query($query);
-			if ($res) return $res[0]['date'];
-			else return false;
+			if ($res) {
+				if ($field === true) return $res[1]['date'];
+				else return $res[0]['date'];
+			} else return false;
 		} else {
 			if ($field) {
 				$today = date('Y-m-d');
 				if ($field == 'all') {
 					if ($value === true) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$today'";
 					else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
-				} elseif (self::query("SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) $query = "UPDATE `$table` SET `$field` = '$value' WHERE `id` = '$member' AND `date` = '$date'";
-				else $query = "INSERT INTO `$table` (`date`, `id`, `$field`) VALUES ('$date', '$member', '$value')";
+				} else {
+					if (self::query("SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) {
+						if (is_array($field)) {
+							foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
+							$field = implode(",", $field);
+						} else $field = "`$field` = " . self::format_value($value);
+						$query = "UPDATE `$table` SET $field WHERE `id` = '$member' AND `date` = '$date'";
+					} else {
+						if (is_array($field)) {
+							$field = "`" . implode("`,`", $field) . "`";
+							$value = "'" . implode("','", $value) . "'";
+						} else {
+							$field = "`" . $field . "`";
+							$value = self::format_value($value);
+						}
+						$query = "INSERT INTO `$table` (`date`, `id`, $field) VALUES ('$date', '$member', $value)";
+					}
+				}
 			} else {
 				$query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'";
 			}
