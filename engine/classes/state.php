@@ -273,53 +273,57 @@ class State
 			$stat = Api::member($this->id, $this->game);
 			$id = $this->id;
 			$stat = $stat->$id;
-			foreach ($this as $field => $value) {
-				$api_field = $this->field($field, 'api');
-				if ($api_field) {
-					$val = $this->get_object_field($stat, $api_field);
-					$this->$field = $val;
+			if ($stat !== null) {
+				foreach ($this as $field => $value) {
+					$api_field = $this->field($field, 'api');
+					if ($api_field) {
+						$val = $this->get_object_field($stat, $api_field);
+						$this->$field = $val;
+					}
+				}
+				$technics = Api::member($id, $this->game, 'technics');
+				if ($technics->$id !== null) {
+					$technics = $technics->$id;
+					$this->technics = array();
+					foreach ($technics as $num => $technic) {
+						if ($this->game == 'wot') {
+							$this->technics[$technic->tank_id][0] = $technic->statistics->battles;
+							$this->technics[$technic->tank_id][1] = $technic->statistics->wins;
+							$this->technics[$technic->tank_id][2] = $technic->mark_of_mastery;
+						}
+						if ($this->game == 'wotb') {
+							$this->technics[$technic->tank_id][0] = $technic->all->battles;
+							$this->technics[$technic->tank_id][1] = $technic->all->wins;
+							$this->technics[$technic->tank_id][2] = $technic->mark_of_mastery;
+						}
+						if ($this->game == 'wowp') {
+							$this->technics[$technic->plane_id][0] = $technic->battles;
+							$this->technics[$technic->plane_id][1] = $technic->wins;
+						}
+						if ($this->game == 'wows') {
+							$this->technics[(string)$technic->ship_id][0] = $technic->pvp->battles;
+							$this->technics[(string)$technic->ship_id][1] = $technic->pvp->wins;
+						}
+					}
+					ksort($this->technics);
+				}
+				$medals = Api::member($id, $this->game, 'medals');
+				if ($medals->$id !== null) {
+					if ($this->game == 'wows') $medals = $medals->$id->battle;
+					else $medals = $medals->$id->achievements;
+					$this->medals = array();
+					foreach ($medals as $name => $value) {
+						if (isset(Game::$map_medals[$this->game])) {
+							if (isset(Game::$map_medals[$this->game][$name])) {
+								$medal = $this->game == 'wowp' ? $value->name : $name;
+								$val = $this->game == 'wowp' ? $value->number : $value;
+								$this->medals[Game::$map_medals[$this->game][$medal]] = $val;
+							}
+						}
+					}
+					ksort($this->medals);
 				}
 			}
-			$technics = Api::member($this->id, $this->game, 'technics');
-			if ($this->game == 'wot' || $this->game == 'wotb') $technics = $technics->$id;
-			if ($this->game == 'wowp') {
-				$technics = $technics->$id;
-			}
-			if ($this->game == 'wows') {
-				$technics = $technics->$id;
-			}
-			$this->technics = array();
-			foreach ($technics as $num => $technic) {
-				if ($this->game == 'wot') {
-					$this->technics[$technic->tank_id][0] = $technic->statistics->battles;
-					$this->technics[$technic->tank_id][1] = $technic->statistics->wins;
-					$this->technics[$technic->tank_id][2] = $technic->mark_of_mastery;
-				}
-				if ($this->game == 'wotb') {
-					$this->technics[$technic->tank_id][0] = $technic->all->battles;
-					$this->technics[$technic->tank_id][1] = $technic->all->wins;
-					$this->technics[$technic->tank_id][2] = $technic->mark_of_mastery;
-				}
-			}
-			ksort($this->technics);
-			$medals = Api::member($this->id, $this->game, 'medals');
-			if ($this->game == 'wot') $medals = $medals->$id->achievements;
-			if ($this->game == 'wotb') {
-				$medals = $medals->$id->achievements;
-			}
-			if ($this->game == 'wowp') {
-				$medals = $medals->$id->achievements;
-			}
-			if ($this->game == 'wows') {
-				$medals = $medals->$id->achievements;
-			}
-			$this->medals = array();
-			foreach ($medals as $name => $value) {
-				if (isset(Game::$map_medals[$this->game])) {
-					if (isset(Game::$map_medals[$this->game][$name])) $this->medals[Game::$map_medals[$this->game][$name]] = $value;
-				}
-			}
-			ksort($this->medals);
 		} else {
 			$date = Sql::stat($this->id, $this->game, 'full', $type == 'yesterday' ? true : false);
 			$stats = Sql::stat($this->id, $this->game, $date, 'all', $type == 'yesterday' ? true : false);
@@ -352,8 +356,8 @@ class State
 					}
 				}
 			}
-			ksort($this->technics);
-			ksort($this->medals);
+			if ($this->technics !== null) ksort($this->technics);
+			if ($this->medals !== null) ksort($this->medals);
 		}
 	}
 
@@ -375,10 +379,10 @@ class State
 					if ($type == 'part' && $this->$field != null) {
 						if ($field == 'technics') {
 							foreach ($state->technics as $num => $technic) {
-								if (isset($this->technics->$num)) {
-									if ($this->technics->$num[0] != $state->technics->$num[0]) {
-										foreach ($state->technics->$num as $n => $v) $state->technics->$num[$n] -= $this->technics->$num;
-									} else unset($state->technics->$num);
+								if (isset($this->technics[$num])) {
+									if ($this->technics[$num][0] != $state->technics[$num][0]) {
+										foreach ($state->technics[$num] as $n => $v) $state->technics[$num][$n] -= $this->technics[$num][$n];
+									} else unset($state->technics[$num]);
 								}
 							}
 							$new_value = json_encode($state->technics);
@@ -396,8 +400,7 @@ class State
 					if ($field == 'technics' || $field == 'medals') {
 						$fields[] = $field;
 						$values[] = $new_value;
-					}
-					else {
+					} else {
 						$new_field = $this->field($field, 'sql');
 						if ($new_field) {
 							$fields[] = $new_field;

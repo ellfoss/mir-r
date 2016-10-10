@@ -28,7 +28,7 @@ class Sql
 		}
 	}
 
-	private static function query($query)
+	public static function query($query)
 	{
 		if (!self::$sql) self::connect();
 		if (self::$sql) {

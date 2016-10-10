@@ -43,13 +43,15 @@ if (Time::check()) {
 			$game->check();
 			$list = Api::member(implode('%2C', array_values($list_members)), $item, 'time');
 			foreach ($list as $num => $member) {
-				$time = date('Y-m-d H:i:s', $member->last_battle_time);
-				$field = $item . '_update';
-				$last_time = $members[$num]->$field;
-				if ($time != $last_time && Time::check()) {
-					$members[$num]->check_state($item);
-					$members[$num]->$field = $time;
-					$members[$num]->save_member();
+				if($member !== null && $member->last_battle_time != 0) {
+					$time = date('Y-m-d H:i:s', $member->last_battle_time);
+					$field = $item . '_update';
+					$last_time = $members[$num]->$field;
+					if ($time != $last_time && Time::check()) {
+						$members[$num]->check_state($item);
+						$members[$num]->$field = $time;
+						$members[$num]->save_member();
+					}
 				}
 			}
 		}

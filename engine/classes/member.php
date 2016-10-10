@@ -18,7 +18,7 @@ class Member
 	public $clan;
 	public $role;
 	public $games;
-	public $state;
+	public $states;
 	public $wot_update;
 	public $wotb_update;
 	public $wowp_update;
@@ -55,12 +55,12 @@ class Member
 			foreach ($this->sync as $key => $value) {
 				$this->$key = $data[$value];
 				if ($key == 'games') {
-					$games = json_decode($data[$value]);
-					$this->games = array();
-					if ($games) foreach ($games as $num => $game) {
-						$this->games[$game] = '';
-						$this->state($game);
-					}
+					$this->games = json_decode($data[$value]);
+//					$this->games = array();
+//					if ($games) foreach ($games as $num => $game) {
+//						$this->games[$game] = '';
+//						$this->state($game);
+//					}
 				}
 			}
 
@@ -153,8 +153,8 @@ class Member
 
 	public function state($game)
 	{
-		if (isset($this->games[$game])) {
-			$this->games[$game] = new State($this, $game);
+		if (isset($this->states[$game])) {
+			$this->states[$game] = new State($this, $game);
 		}
 	}
 
@@ -166,6 +166,6 @@ class Member
 		$today = date('Y-m-d');
 		$type = 'part';
 		if (!$date || substr($today, -2) == '01' || substr($date, 0, 7) != substr($today, 0, 7) || $date == $today) $type = 'full';
-		$old_stat->compare($new_stat, $type);
+		if($new_stat->battles != 0) $old_stat->compare($new_stat, $type);
 	}
 }
