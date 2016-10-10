@@ -28,6 +28,11 @@ class Sql
 		}
 	}
 
+	public static function close()
+	{
+		if (self::$sql) self::$sql->close();
+	}
+
 	public static function query($query)
 	{
 		if (!self::$sql) self::connect();
@@ -46,14 +51,31 @@ class Sql
 		$list = array();
 		foreach ($arr as $key => $value) {
 			if ($val) {
-				if (is_array($value)) $list[$value[$field]] = $value[$val];
-				if (is_object($value)) $list[$value->$field] = $value->$val;
+				if (is_array($value)) $list[$value[$field]] = self::json($value[$val]);
+				if (is_object($value)) $list[$value->$field] = self::json($value->$val);
 			} else {
-				if (is_array($value)) $list[] = $value[$field];
-				if (is_object($value)) $list[] = $value->$field;
+				if (is_array($value)) $list[] = self::json($value[$field]);
+				if (is_object($value)) $list[] = self::json($value->$field);
 			}
 		}
 		return $list;
+	}
+
+	public static function list_to_arr($list, $field)
+	{
+		if (!$list) return $list;
+		$arr = array();
+		foreach ($list as $key => $value) {
+			if (is_array($value)) $arr[$value[$field]] = $value;
+			if (is_object($value)) $arr[$value->$field] = $value;
+		}
+		return $arr;
+	}
+
+	private static function json($value)
+	{
+		if (is_string($value) && (substr($value, 0, 1) == '{' || substr($value, 0, 1) == '[')) return json_decode($value);
+		else return $value;
 	}
 
 	public static function get_roles()
@@ -102,6 +124,19 @@ class Sql
 			return self::query($query);
 		} else $query = "SELECT * FROM `members`" . ($id === null ? "" : " WHERE `id` = '$id'") . ($clan === null ? "" : ($id === null ? " WHERE" : " AND") . " `clan` = '$clan'");
 		return self::query($query);
+	}
+
+	public static function member_rights($id, $session_id = null)
+	{
+		$rights = 'guest';
+		$query = null;
+		$res = null;
+		if ($id !== null) $query = "SELECT `rights` FROM `members` WHERE `id` = '$id'";
+		elseif ($session_id !== null) $query = "SELECT `rights` FROM `members` WHERE `sessionID` = '$session_id'";
+		if ($query) $res = self::query($query);
+		if ($res) $rights = $res[0]['rights'];
+		Rights::set($rights);
+		return $rights;
 	}
 
 	public static function clan_list()

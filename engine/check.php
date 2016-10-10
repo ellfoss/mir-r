@@ -8,7 +8,7 @@
 
 include 'main.php';
 
-Log::set_debug(true);
+Log::set_debug(false);
 Time::start();
 
 $members = array();
@@ -57,6 +57,8 @@ if (Time::check()) {
 		}
 	}
 }
+
+Sql::close();
 
 Log::add('Время выполнения скрипта ' . Time::script_time() . ' с.');
 Log::end();
