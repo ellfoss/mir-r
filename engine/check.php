@@ -11,6 +11,8 @@ include 'main.php';
 Log::set_debug(false);
 Time::start();
 
+$date = new DateTime();
+if($date->format('d H') == '01 00') Sql::visitors(true);
 $members = array();
 $list_members = Sql::member_list();
 Log::add('Проверка игроков');
@@ -37,7 +39,7 @@ if (Time::check()) {
 if (Time::check()) {
 	Log::add('Проверка игр');
 	$games = array('wot', 'wotb', 'wowp', 'wows');
-	foreach ($games as $num => $item) {
+	foreach ($games as $number => $item) {
 		$game = new Game($item);
 		if (Time::check()) {
 			$game->check();

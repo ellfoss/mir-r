@@ -122,6 +122,8 @@ class Sql
 		} elseif ($clan && $clan == 'change' && $field && $value !== null) {
 			$query = "UPDATE `members` SET `$field` = '$value' WHERE `id` = '$id'";
 			return self::query($query);
+		} elseif ($clan == 'delete') {
+			$query = "DELETE FROM `members`";
 		} else $query = "SELECT * FROM `members`" . ($id === null ? "" : " WHERE `id` = '$id'") . ($clan === null ? "" : ($id === null ? " WHERE" : " AND") . " `clan` = '$clan'");
 		return self::query($query);
 	}
@@ -163,9 +165,13 @@ class Sql
 		}
 	}
 
-	public static function visitors()
+	public static function visitors($clear = false)
 	{
-		$query = "SELECT * FROM `visitors`";
+		$date = new DateTime();
+		$date->modify('-1 month');
+		$date = $date->format('Y-m-d');
+		if ($clear) $query = "DELETE FROM `visitors` WHERE `date` < '$date'";
+		else $query = "SELECT * FROM `visitors`";
 		return self::query($query);
 	}
 
@@ -350,45 +356,54 @@ class Sql
 	public static function stat($member, $game, $date, $field = null, $value = null)
 	{
 		$table = $game . '_stat';
-		if ($date == 'check') {
-			$query = "SELECT * FROM `$table` WHERE `id` = '$member'";
-			if (self::query($query)) return true;
-			else return false;
-		} elseif ($date == 'full') {
-			$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' ORDER BY `date` DESC LIMIT 2";
-			$res = self::query($query);
-			if ($res) {
-				if ($field === true) return $res[1]['date'];
-				else return $res[0]['date'];
-			} else return false;
-		} else {
-			if ($field) {
-				$today = date('Y-m-d');
-				if ($field == 'all') {
-					if ($value === true) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$today'";
-					else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
-				} else {
-					if (self::query("SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) {
-						if (is_array($field)) {
-							foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
-							$field = implode(",", $field);
-						} else $field = "`$field` = " . self::format_value($value);
-						$query = "UPDATE `$table` SET $field WHERE `id` = '$member' AND `date` = '$date'";
-					} else {
-						if (is_array($field)) {
-							$field = "`" . implode("`,`", $field) . "`";
-							$value = "'" . implode("','", $value) . "'";
-						} else {
-							$field = "`" . $field . "`";
-							$value = self::format_value($value);
-						}
-						$query = "INSERT INTO `$table` (`date`, `id`, $field) VALUES ('$date', '$member', $value)";
+		switch ($date) {
+			case 'check':
+				$query = "SELECT * FROM `$table` WHERE `id` = '$member'";
+				return self::query($query);
+				break;
+
+			case 'full':
+				$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' ORDER BY `date` DESC LIMIT 2";
+				$res = self::query($query);
+				if ($res) {
+					if ($field === true) return $res[1]['date'];
+					else return $res[0]['date'];
+				} else return false;
+				break;
+
+			default:
+				if ($field) {
+					$today = date('Y-m-d');
+					switch ($field) {
+						case 'all':
+							if ($value === true) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$today'";
+							else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
+							break;
+
+						case 'full':
+							$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' AND `date` <= '$date' ORDER BY `date` DESC LIMIT 2";
+							break;
+
+						default:
+							if (self::query("SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'")) {
+								if (is_array($field)) {
+									foreach ($field as $num => $item) $field[$num] = "`" . $item . "` = " . self::format_value($value[$num]);
+									$field = implode(",", $field);
+								} else $field = "`$field` = " . self::format_value($value);
+								$query = "UPDATE `$table` SET $field WHERE `id` = '$member' AND `date` = '$date'";
+							} else {
+								if (is_array($field)) {
+									$field = "`" . implode("`,`", $field) . "`";
+									$value = "'" . implode("','", $value) . "'";
+								} else {
+									$field = "`" . $field . "`";
+									$value = self::format_value($value);
+								}
+								$query = "INSERT INTO `$table` (`date`, `id`, $field) VALUES ('$date', '$member', $value)";
+							}
 					}
-				}
-			} else {
-				$query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'";
-			}
-			return self::query($query);
+				} else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` = '$date'";
+				return self::query($query);
 		}
 	}
 

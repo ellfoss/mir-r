@@ -10,6 +10,7 @@ class State
 {
 	public $id;
 	public $game;
+	public $date;
 	public $battles;
 	public $wins;
 	public $losses;
@@ -30,7 +31,7 @@ class State
 	public $assists;
 	public $technics;
 	public $medals;
-	private $fields = array(
+	private static $fields = array(
 		'battles' => array(
 			'wot' => array(
 				'sql' => 'battles',
@@ -259,12 +260,17 @@ class State
 		)
 	);
 
-	function __construct($member, $game, $type = false)
+	function __construct($member, $game, $type = false, $date = null)
 	{
-		$this->id = $member->id;
+		if ($member instanceof Member) $this->id = $member->id;
+		else $this->id = $member;
 		$this->game = $game;
-		if ($type == 'api') $this->set_state($type);
-		elseif (Sql::stat($member->id, $game, 'check')) $this->set_state($type);
+		$this->date = new DateTime($date);
+		if ($type == 'api'){
+			$this->set_state($type);
+			$this->date = new DateTime();
+		}
+		elseif (Sql::stat($this->id, $game, 'check')) $this->set_state($type);
 	}
 
 	public function set_state($type = false)
@@ -325,7 +331,8 @@ class State
 				}
 			}
 		} else {
-			$date = Sql::stat($this->id, $this->game, 'full', $type == 'yesterday' ? true : false);
+			$date = $this->date->format('Y-m-d');
+			$date = Sql::stat($this->id, $this->game, $date, $type == 'yesterday' ? true : false);
 			$stats = Sql::stat($this->id, $this->game, $date, 'all', $type == 'yesterday' ? true : false);
 			foreach ($stats as $num => $stat) {
 				foreach ($this as $field => $value) {
@@ -387,7 +394,7 @@ class State
 							}
 							$new_value = json_encode($state->technics);
 						} elseif ($field == 'medals') {
-							foreach ($state->medals as $medal => $value) {
+							foreach ($state->medals as $medal => $val) {
 								if (isset($this->medals[$medal])) {
 									if ($this->medals[$medal] != $state->medals[$medal]) {
 										$state->medals[$medal] -= $this->medals[$medal];
@@ -416,13 +423,13 @@ class State
 	private function field($field, $type, $reverse = false)
 	{
 		if ($reverse) {
-			foreach ($this->fields as $num => $fld) {
+			foreach (self::$fields as $num => $fld) {
 				if (isset($fld[$this->game])) {
 					if ($fld[$this->game][$type] == $field) return $fld;
 				}
 			}
 		} else {
-			if (isset($this->fields[$field][$this->game])) return $this->fields[$field][$this->game][$type];
+			if (isset(self::$fields[$field][$this->game])) return self::$fields[$field][$this->game][$type];
 			else return false;
 		}
 		return false;
@@ -441,5 +448,16 @@ class State
 	{
 		$stat = Sql::stat($this->id, $this->game, $date);
 		if (!$stat || count($stat) == 0 || $stat['type'] != $type) Sql::stat($this->id, $this->game, $date, 'type', $type);
+	}
+
+	public function out()
+	{
+		$out = array();
+		foreach (self::$fields as $field => $value) {
+			if (isset($value[$this->game])) $out[$field] = $this->$field;
+		}
+		$out['medals'] = $this->medals;
+		$out['technics'] = $this->technics;
+		return $out;
 	}
 }

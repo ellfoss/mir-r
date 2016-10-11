@@ -8,28 +8,43 @@
  */
 class Rights
 {
-	private static $rights = 'guest';
-	private static $right_list = array('guest', 'member', 'admin', 'sadmin');
+	private static $right = 'guest';
+	private static $right_list = array('0' => 'guest', '1' => 'member', '2' => 'admin', '3' => 'sadmin');
 
 	public static function set($new_right)
 	{
-		foreach (self::$right_list as $right) {
-			if ($right == $new_right) self::$rights = $right;
+		foreach (self::$right_list as $number => $right) {
+			if ($right == $new_right) self::$right = $right;
 		}
 	}
 
-	public static function member(){
-		if(self::$rights == 'member' || self::$rights == 'admin' || self::$rights == 'sadmin') return true;
+	public static function member()
+	{
+		if (self::$right == 'member' || self::$right == 'admin' || self::$right == 'sadmin') return true;
 		else return false;
 	}
 
-	public static function admin(){
-		if(self::$rights == 'admin' || self::$rights == 'sadmin') return true;
+	public static function admin()
+	{
+		if (self::$right == 'admin' || self::$right == 'sadmin') return true;
 		else return false;
 	}
 
-	public static function samin(){
-		if(self::$rights == 'sadmin') return true;
+	public static function samin()
+	{
+		if (self::$right == 'sadmin') return true;
+		else return false;
+	}
+
+	public static function compare($right)
+	{
+		$current = 0;
+		$compare = 0;
+		foreach (self::$right_list as $number => $value) {
+			if ($value == self::$right) $current = $number;
+			if ($value == $right) $compare = $number;
+		}
+		if ($current > $compare) return true;
 		else return false;
 	}
 }

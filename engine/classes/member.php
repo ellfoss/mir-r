@@ -24,7 +24,8 @@ class Member
 	public $wowp_update;
 	public $wows_update;
 	public $color;
-	private $sync = array(
+	public $new = false;
+	private static $sync = array(
 		'name' => 'name',
 		'rights' => 'rights',
 		'real_name' => 'rName',
@@ -44,7 +45,10 @@ class Member
 	function __construct($id)
 	{
 		$this->id = $id;
-		if (!$this->get_sql_data()) $this->check_member(true);
+		if (!$this->get_sql_data()) {
+			$this->new = true;
+			$this->check_member();
+		}
 	}
 
 	public function get_sql_data()
@@ -52,15 +56,10 @@ class Member
 		$data = Sql::member($this->id);
 		$data = $data[0];
 		if ($data) {
-			foreach ($this->sync as $key => $value) {
+			foreach (self::$sync as $key => $value) {
 				$this->$key = $data[$value];
 				if ($key == 'games') {
 					$this->games = json_decode($data[$value]);
-//					$this->games = array();
-//					if ($games) foreach ($games as $num => $game) {
-//						$this->games[$game] = '';
-//						$this->state($game);
-//					}
 				}
 			}
 
@@ -68,7 +67,7 @@ class Member
 		} else return false;
 	}
 
-	public function check_member($new = false)
+	public function check_member()
 	{
 		Log::add('Проверка игрока ' . $this->name);
 		$id = $this->id;
@@ -79,50 +78,50 @@ class Member
 				$this->reg_date = date('Y-m-d H:i:s', $member->$id->created_at);
 				$this->games = $member->$id->games;
 
-				$this->check_clan($new);
+				$this->check_clan();
 			}
 		}
 	}
 
-	public function save_member($new = false)
+	public function save_member()
 	{
-		if ($new) {
+		if ($this->new) {
 			if (Sql::member($this->id, 'new', $this)) Event::member($this->id, 'new');
-		} else {
-			$member = Sql::member($this->id);
-			$member = $member[0];
-			foreach ($this as $key => $value) {
-				if (array_key_exists($this->sync[$key], $member) && $key != 'games' && $member[$this->sync[$key]] != $value) {
-					Sql::member($this->id, 'change', $this->sync[$key], $value);
-					switch ($key) {
-						case 'name':
-							Event::member($this->id, 'name', $member['name']);
-							Log::add('Игрок ' . $this->id . ' изменил имя на ' . $this->name);
-							break;
-						case 'clan':
-							if ($this->clan) {
-								Event::member($this->id, 'clan', $this->clan);
-								Log::add('Игрок ' . $this->name . ' принят в клан ' . $this->clan);
-							} else {
-								Event::member($this->id, 'outclan', $member['clan']);
-								Log::add('Игрок ' . $this->name . ' вышел из клана ' . $member['clan']);
-							}
-							break;
-						case 'role':
-							Event::member($this->id, 'role', $this->role);
-							Log::add('Игрок ' . $this->name . ' получил должность ' . $this->role);
-							break;
-					}
+			self::colors();
+		}
+		$member = Sql::member($this->id);
+		$member = $member[0];
+		foreach ($this as $key => $value) {
+			if (array_key_exists(self::$sync[$key], $member) && $key != 'games' && $key != 'color' && $member[self::$sync[$key]] != $value) {
+				Sql::member($this->id, 'change', self::$sync[$key], $value);
+				switch ($key) {
+					case 'name':
+						Event::member($this->id, 'name', $member['name']);
+						Log::add('Игрок ' . $this->id . ' изменил имя на ' . $this->name);
+						break;
+					case 'clan':
+						if ($this->clan) {
+							Event::member($this->id, 'clan', $this->clan);
+							Log::add('Игрок ' . $this->name . ' принят в клан ' . $this->clan);
+						} else {
+							Event::member($this->id, 'outclan', $member['clan']);
+							Log::add('Игрок ' . $this->name . ' вышел из клана ' . $member['clan']);
+						}
+						break;
+					case 'role':
+						Event::member($this->id, 'role', $this->role);
+						Log::add('Игрок ' . $this->name . ' получил должность ' . $this->role);
+						break;
 				}
-				if ($key == 'games') {
-					$val = json_encode(array_values($this->games));
-					if ($val != $member[$key]) Sql::member($this->id, 'change', $this->sync[$key], $val);
-				}
+			}
+			if ($key == 'games') {
+				$val = json_encode(array_values($this->games));
+				if ($val != $member[$key]) Sql::member($this->id, 'change', self::$sync[$key], $val);
 			}
 		}
 	}
 
-	public function check_clan($new = false)
+	public function check_clan()
 	{
 		Log::out('Проверка клана игрока ' . $this->name);
 		$id = $this->id;
@@ -148,7 +147,7 @@ class Member
 		}
 		$update = Api::member($id, 'update');
 		$this->check_clan = date('Y-m-d H:i:s', $update->$id->updated_at);
-		$this->save_member($new);
+		$this->save_member();
 	}
 
 	public function state($game)
@@ -166,6 +165,31 @@ class Member
 		$today = date('Y-m-d');
 		$type = 'part';
 		if (!$date || substr($today, -2) == '01' || substr($date, 0, 7) != substr($today, 0, 7) || $date == $today) $type = 'full';
-		if($new_stat->battles != 0) $old_stat->compare($new_stat, $type);
+		if ($new_stat->battles != 0) $old_stat->compare($new_stat, $type);
+	}
+
+	public function delete()
+	{
+		$id = $this->id;
+		if (Sql::member($id, 'delete')) {
+			self::colors();
+			foreach ($this->games as $num => $game) {
+				$table = $game . '_stat';
+				Sql::query("DELETE FROM `$table` WHERE `id` = '$id'");
+			}
+			return true;
+		} else return false;
+	}
+
+	public static function colors()
+	{
+		$list = Sql::query("SELECT * FROM `members` ORDER BY `regDate` DESC");
+		$items = count($list);
+		foreach ($list as $number => $member) {
+			$id = $member['id'];
+			$cur = 360 * $number / $items;
+			$color = Api::convertHSL($cur, 100, 50);
+			Sql::query("UPDATE `members` SET `color` = '$color' WHERE `id` = '$id'");
+		};
 	}
 }

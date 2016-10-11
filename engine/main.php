@@ -11,5 +11,3 @@ function __autoload($class_name)
 	include_once('classes/' . $class_name . '.php');
 }
 
-$data = Sql::data();
-$clan = Sql::clans($data['id']);
