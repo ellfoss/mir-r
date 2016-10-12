@@ -1,4 +1,4 @@
 $ cat .gitignore
 .idea/*
-log/*
-utils/log/*
+dist/*
+node_modules/*

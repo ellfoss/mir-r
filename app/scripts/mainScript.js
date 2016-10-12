@@ -1335,9 +1335,9 @@ $(document).ready(function (e) {
 	});
 	$('#menuLogin').click(function () {
 		if (memberID == '')
-			document.location.href = 'openID.php?action=verify';
+			document.location.href = '../openID.php';
 		else
-			document.location.href = 'openID.php?action=exit';
+			document.location.href = '../openID.php';
 	});
 	$('#adminTechnicsSelectors .confirm[confirm="new"]').click(function () {
 		var list = new Array();
