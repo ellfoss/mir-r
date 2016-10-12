@@ -38,7 +38,8 @@ class Medal
 		$this->changes = new MedalChanges($this->game, $this->id);
 	}
 
-	private function new_medal(){
+	private function new_medal()
+	{
 		$this->state = 'new';
 		Sql::medal($this->game, $this->id, 'state', 'new');
 	}
@@ -68,6 +69,13 @@ class Medal
 				}
 			}
 		}
+	}
+
+	public function change_field($field, $value)
+	{
+		$this->$field = $value;
+		$field = $this->field($field);
+		return Sql::medal($this->game, $this->id, $field, $value);
 	}
 
 	public function compare($medal)
@@ -178,6 +186,17 @@ class Medal
 			foreach ($fields as $num => $name) if ($name == $field) return $num;
 		}
 		return $field;
+	}
+
+	public function out()
+	{
+		$out = array();
+		foreach ($this as $field => $value) {
+			if ($value !== null) {
+				$out[$field] = $value;
+			}
+		}
+		return $out;
 	}
 }
 

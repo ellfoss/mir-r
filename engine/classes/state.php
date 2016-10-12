@@ -11,6 +11,7 @@ class State
 	public $id;
 	public $game;
 	public $date;
+	public $type;
 	public $battles;
 	public $wins;
 	public $losses;
@@ -260,22 +261,22 @@ class State
 		)
 	);
 
-	function __construct($member, $game, $type = false, $date = null)
+	function __construct($member, $game, $type = 'full', $date = null)
 	{
 		if ($member instanceof Member) $this->id = $member->id;
 		else $this->id = $member;
 		$this->game = $game;
+		$this->type = $type;
 		$this->date = new DateTime($date);
-		if ($type == 'api'){
-			$this->set_state($type);
+		if ($type == 'api') {
+			$this->set_state();
 			$this->date = new DateTime();
-		}
-		elseif (Sql::stat($this->id, $game, 'check')) $this->set_state($type);
+		} elseif (Sql::stat($this->id, $game, 'check')) $this->set_state();
 	}
 
-	public function set_state($type = false)
+	public function set_state()
 	{
-		if ($type == 'api') {
+		if ($this->type == 'api') {
 			$stat = Api::member($this->id, $this->game);
 			$id = $this->id;
 			$stat = $stat->$id;
@@ -332,8 +333,10 @@ class State
 			}
 		} else {
 			$date = $this->date->format('Y-m-d');
-			$date = Sql::stat($this->id, $this->game, $date, $type == 'yesterday' ? true : false);
-			$stats = Sql::stat($this->id, $this->game, $date, 'all', $type == 'yesterday' ? true : false);
+			if ($this->type == 'full') {
+				$full_date = Sql::stat($this->id, $this->game, $date, 'full');
+				$stats = Sql::stat($this->id, $this->game, $full_date, 'all', $date);
+			} else $stats = Sql::stat($this->id, $this->game, $date);
 			foreach ($stats as $num => $stat) {
 				foreach ($this as $field => $value) {
 					if ($field == 'technics') {
@@ -361,6 +364,7 @@ class State
 							if ($stat['type'] == 'part') $this->$field += $stat[$sql_field];
 						}
 					}
+					if ($stat['type'] == 'full') $this->type = 'full';
 				}
 			}
 			if ($this->technics !== null) ksort($this->technics);
@@ -370,54 +374,56 @@ class State
 
 	public function compare($state, $type)
 	{
-		$today = date('Y-m-d');
-		$fields = array();
-		$values = array();
-		foreach ($state as $field => $value) {
-			if ($field != 'id' && $field != 'game') {
-				$old_value = $this->$field;
-				$new_value = $state->$field;
-				if ($field == 'technics' || $field == 'medals') {
-					$old_value = json_encode($this->$field);
-					$new_value = json_encode($state->$field);
-				}
-				if ($old_value != $new_value || $type == 'full') {
-					$this->check_stat($today, $type);
-					if ($type == 'part' && $this->$field != null) {
-						if ($field == 'technics') {
-							foreach ($state->technics as $num => $technic) {
-								if (isset($this->technics[$num])) {
-									if ($this->technics[$num][0] != $state->technics[$num][0]) {
-										foreach ($state->technics[$num] as $n => $v) $state->technics[$num][$n] -= $this->technics[$num][$n];
-									} else unset($state->technics[$num]);
-								}
-							}
-							$new_value = json_encode($state->technics);
-						} elseif ($field == 'medals') {
-							foreach ($state->medals as $medal => $val) {
-								if (isset($this->medals[$medal])) {
-									if ($this->medals[$medal] != $state->medals[$medal]) {
-										$state->medals[$medal] -= $this->medals[$medal];
-									} else unset($state->medals[$medal]);
-								}
-							}
-							$new_value = json_encode($state->medals);
-						} else $new_value -= $old_value;
-					}
+		if ($this->type == 'full') {
+			$today = date('Y-m-d');
+			$fields = array();
+			$values = array();
+			foreach ($state as $field => $value) {
+				if ($field != 'id' && $field != 'game' && $field != 'date' && $field != 'type') {
+					$old_value = $this->$field;
+					$new_value = $state->$field;
 					if ($field == 'technics' || $field == 'medals') {
-						$fields[] = $field;
-						$values[] = $new_value;
-					} else {
-						$new_field = $this->field($field, 'sql');
-						if ($new_field) {
-							$fields[] = $new_field;
+						$old_value = json_encode($this->$field);
+						$new_value = json_encode($state->$field);
+					}
+					if ($old_value != $new_value || $type == 'full') {
+						$this->check_stat($today, $type);
+						if ($type == 'part' && $this->$field != null) {
+							if ($field == 'technics') {
+								foreach ($state->technics as $num => $technic) {
+									if (isset($this->technics[$num])) {
+										if ($this->technics[$num][0] != $state->technics[$num][0]) {
+											foreach ($state->technics[$num] as $n => $v) $state->technics[$num][$n] -= $this->technics[$num][$n];
+										} else unset($state->technics[$num]);
+									}
+								}
+								$new_value = json_encode($state->technics);
+							} elseif ($field == 'medals') {
+								foreach ($state->medals as $medal => $val) {
+									if (isset($this->medals[$medal])) {
+										if ($this->medals[$medal] != $state->medals[$medal]) {
+											$state->medals[$medal] -= $this->medals[$medal];
+										} else unset($state->medals[$medal]);
+									}
+								}
+								$new_value = json_encode($state->medals);
+							} else $new_value -= $old_value;
+						}
+						if ($field == 'technics' || $field == 'medals') {
+							$fields[] = $field;
 							$values[] = $new_value;
+						} else {
+							$new_field = $this->field($field, 'sql');
+							if ($new_field) {
+								$fields[] = $new_field;
+								$values[] = $new_value;
+							}
 						}
 					}
 				}
 			}
+			if (count($fields) > 0) Sql::stat($this->id, $this->game, $today, $fields, $values);
 		}
-		if (count($fields) > 0) Sql::stat($this->id, $this->game, $today, $fields, $values);
 	}
 
 	private function field($field, $type, $reverse = false)
@@ -456,6 +462,7 @@ class State
 		foreach (self::$fields as $field => $value) {
 			if (isset($value[$this->game])) $out[$field] = $this->$field;
 		}
+		$out['type'] = $this->type;
 		$out['medals'] = $this->medals;
 		$out['technics'] = $this->technics;
 		return $out;

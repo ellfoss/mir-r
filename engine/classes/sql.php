@@ -376,12 +376,15 @@ class Sql
 					$today = date('Y-m-d');
 					switch ($field) {
 						case 'all':
-							if ($value === true) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$today'";
+							if ($value) $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date' AND `date` < '$value'";
 							else $query = "SELECT * FROM `$table` WHERE `id` = '$member' AND `date` >= '$date'";
 							break;
 
 						case 'full':
-							$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' AND `date` <= '$date' ORDER BY `date` DESC LIMIT 2";
+							$query = "SELECT `date` FROM `$table` WHERE `id` = '$member' AND `type` = 'full' AND `date` <= '$date' ORDER BY `date` DESC LIMIT 1";
+							$res = self::query($query);
+							if ($res) return $res[0]['date'];
+							else return false;
 							break;
 
 						default:

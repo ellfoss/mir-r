@@ -47,6 +47,13 @@ class Technic
 		}
 	}
 
+	public function change_field($field, $value)
+	{
+		$this->$field = $value;
+		$field = $this->field($field);
+		return Sql::technic($this->game, $this->id, $field, $value);
+	}
+
 	public function compare($technic)
 	{
 		foreach ($this as $field => $value) {
@@ -109,5 +116,16 @@ class Technic
 			foreach ($fields as $num => $name) if ($name == $field) return $num;
 		}
 		return $field;
+	}
+
+	public function out()
+	{
+		$out = array();
+		foreach ($this as $field => $value) {
+			if ($value !== null) {
+				$out[$field] = $value;
+			}
+		}
+		return $out;
 	}
 }

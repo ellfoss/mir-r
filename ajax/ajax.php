@@ -19,11 +19,10 @@ $error = '';
 $data = '';
 $games = array('wot', 'wotb', 'wowp', 'wows');
 
-$_POST['type'] = 'state';
-//$_POST['action'] = 'new';
-$_POST['member'] = '1851278';
-//$_POST['name'] = 'ellfoss';
+$_POST['type'] = 'medal';
+$_POST['medal'] = '174';
 $_POST['game'] = 'wot';
+$_POST['action'] = 'new';
 $_SESSION['login'] = '1851278';
 
 $rights = Sql::member_rights(isset($_SESSION['login']) ? $_SESSION['login'] : null, isset($_COOKIE['sessionID']) ? $_COOKIE['sessionID'] : null);
@@ -46,9 +45,9 @@ if ($type !== null) {
 					if (count($data[$game]['changes']['technics']) == 0) unset ($data[$game]['changes']);
 				}
 				$data[$game]['medals'] = Sql::list_to_arr(Sql::game($game, 'medal'), 'id');
-				foreach ($data[$game]['medals'] as $num => $medal) {
-					if (isset($medal['options']) && $medal['options'] != null) {
-						$options = json_decode($medal['options']);
+				foreach ($data[$game]['medals'] as $num => $technic) {
+					if (isset($technic['options']) && $technic['options'] != null) {
+						$options = json_decode($technic['options']);
 						$data[$game]['medals'][$num]['options'] = array();
 						foreach ($options as $n => $option) {
 							$value = Sql::medal_options($game, $option);
@@ -58,8 +57,8 @@ if ($type !== null) {
 				}
 				if (Rights::admin()) {
 					$data[$game]['changes']['medals'] = Sql::list_to_arr(Sql::game($game, 'medal', 'changes'), 'id');
-					foreach ($data[$game]['changes']['medals'] as $num => $medal) {
-						foreach ($medal as $name => $value) {
+					foreach ($data[$game]['changes']['medals'] as $num => $technic) {
+						foreach ($technic as $name => $value) {
 							if ($name == 'id' || $value === null) unset($data[$game]['changes']['medals'][$num][$name]);
 							if ($name == 'options' && $value != null) {
 								$options = json_decode($value);
@@ -139,8 +138,103 @@ if ($type !== null) {
 			$id = $_POST['member'];
 			$game = $_POST['game'];
 			if ($id) {
-				$state = new State($id, $game);
-				$data = $state->out();
+				$start_date = $_POST['start_date'];
+				$stop_date = $_POST['stop_date'];
+				if ($start_date && $stop_date) {
+					$start_date = Sql::stat($id, $game, $start_date, 'full');
+					if (!$start_date) $start_date = Sql::stat($id, $game, $stop_date, 'full');
+					if ($start_date) {
+						$data['start_date'] = $start_date;
+						$data['stop_date'] = $stop_date;
+						$start_date = new DateTime($start_date);
+						$stop_date = new DateTime($stop_date);
+						$interval = new DateInterval('P1D');
+						$period = new DatePeriod($start_date, $interval, $stop_date);
+						foreach ($period as $date) {
+							$stat = new State($id, $game, 'part', $date->format('Y-m-d'));
+							if ($stat->battles != null && $stat->battles != 0) {
+								$data['stat'][$date->format('Y-m-d')] = $stat->out();
+							}
+						}
+					}
+				} else {
+					$state = new State($id, $game);
+					$data['stat'][date('Y-m-d')] = $state->out();
+				}
+			}
+			break;
+
+		case 'medal':
+			$game = $_POST['game'];
+			$id = $_POST['medal'];
+			if ($game && $id) {
+				$medal = new Medal($game, $id);
+				$action = $_POST['action'];
+				if ($action) {
+					switch ($action) {
+						case 'new':
+							if ($medal->state == 'new') {
+								$medal->change_field('state');
+								$data[$game]['medals'][$id]['state'] = $medal->state;
+							}
+							break;
+
+						case 'change':
+							$field = $_POST['field'];
+							if ($field) {
+								if ($field == 'my_order' || $field == 'view') {
+									$value = $_POST['value'];
+									if ($value) {
+										if ($medal->change_field($field, $value)) $data[$game]['medals'][$id][$field] = $medal->$field;
+									}
+								} else {
+									$medal->accept_changes($field);
+									$data[$game]['medals'][$id] = $medal->out();
+								}
+							}
+							break;
+
+						default:
+							$error = 'Неверное действие';
+					}
+				}
+			}
+			break;
+
+		case 'technic':
+			$game = $_POST['game'];
+			$id = $_POST['technic'];
+			if ($game && $id) {
+				$technic = new Technic($game, $id);
+				$action = $_POST['action'];
+				if ($action) {
+					switch ($action) {
+						case 'new':
+							if ($technic->state == 'new') {
+								$technic->change_field('state');
+								$data[$game]['medals'][$id]['state'] = $technic->state;
+							}
+							break;
+
+						case 'change':
+							$field = $_POST['field'];
+							if ($field) {
+								if ($field == 'my_order' || $field == 'view') {
+									$value = $_POST['value'];
+									if ($value) {
+										if ($technic->change_field($field, $value)) $data[$game]['medals'][$id][$field] = $technic->$field;
+									}
+								} else {
+									$technic->accept_changes($field);
+									$data[$game]['medals'][$id] = $technic->out();
+								}
+							}
+							break;
+
+						default:
+							$error = 'Неверное действие';
+					}
+				}
 			}
 			break;
 

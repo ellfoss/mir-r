@@ -159,7 +159,9 @@ class Member
 
 	public function check_state($game)
 	{
-		$old_stat = new State($this, $game, 'yesterday');
+		$date = new DateTime();
+		$date->diff('-1 day');
+		$old_stat = new State($this, $game, $date->format('Y-m-d'));
 		$new_stat = new State($this, $game, 'api');
 		$date = Sql::stat($this->id, $game, 'full');
 		$today = date('Y-m-d');
