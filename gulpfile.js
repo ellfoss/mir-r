@@ -78,11 +78,11 @@ gulp.task('browserSync', function(){
 });
 
 gulp.task('watcher', function(){
-	gulp.watch(paths.pug, ['files']);
+	gulp.watch([paths.php, paths.css], ['files']);
 	gulp.watch(paths.pug, ['pug']);
 	gulp.watch(paths.styl, ['stylus']);
 	gulp.watch(paths.script, ['script']);
-	gulp.watch(paths.img, ['img']);
+	gulp.watch([paths.png, paths.jpg], ['img']);
 	gulp.watch(paths.font, ['font']);
 });
 
