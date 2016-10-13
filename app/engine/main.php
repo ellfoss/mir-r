@@ -6,8 +6,8 @@
  * Time: 12:15
  */
 
-function __autoload($class_name)
-{
-	include_once('classes/' . $class_name . '.php');
-}
+spl_autoload_register(function ($class_name) {
+	spl_autoload_extensions('.php');
+	spl_autoload('classes/' . mb_strtolower($class_name));
+});
 

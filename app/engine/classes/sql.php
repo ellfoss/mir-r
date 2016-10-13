@@ -40,7 +40,9 @@ class Sql
 			$res = self::$sql->query($query);
 			if ($res) {
 				if ($res === true) return $res;
-				return $res->fetch_all(MYSQLI_ASSOC);
+				$out = array();
+				while ($row = $res->fetch_assoc()) $out[] = $row;
+				return $out;
 			} else return false;
 		} else return false;
 	}
@@ -108,23 +110,36 @@ class Sql
 
 	public static function member($id = null, $clan = null, $field = null, $value = null)
 	{
-		if ($clan && $clan == 'new' && $field instanceof Member) {
-			$new_data = array();
-			$new_data['id'] = $field->id;
-			$new_data['name'] = $field->name;
-			$new_data['rights'] = $field->rights;
-			$new_data['regDate'] = $field->reg_date;
-			$new_data['games'] = json_encode($field->games);
-			$var = "`" . implode("`, `", array_keys($new_data)) . "`";
-			$val = "'" . implode("', '", array_values($new_data)) . "'";
-			$query = "INSERT INTO `members` ($var) VALUES ($val)";
-			return self::query($query);
-		} elseif ($clan && $clan == 'change' && $field && $value !== null) {
-			$query = "UPDATE `members` SET `$field` = '$value' WHERE `id` = '$id'";
-			return self::query($query);
-		} elseif ($clan == 'delete') {
-			$query = "DELETE FROM `members`";
-		} else $query = "SELECT * FROM `members`" . ($id === null ? "" : " WHERE `id` = '$id'") . ($clan === null ? "" : ($id === null ? " WHERE" : " AND") . " `clan` = '$clan'");
+		$query = $query = "SELECT * FROM `members`" . ($id ? " WHERE `id` = '$id'" : "") . ($clan ? ($id === null ? " WHERE" : " AND") . " `clan` = '$clan'" : "");
+		switch ($clan) {
+			case 'new':
+				if ($field instanceof Member) {
+					$new_data = array();
+					$new_data['id'] = $field->id;
+					$new_data['name'] = $field->name;
+					$new_data['rights'] = $field->rights;
+					$new_data['regDate'] = $field->reg_date;
+					$new_data['games'] = json_encode($field->games);
+					$var = "`" . implode("`, `", array_keys($new_data)) . "`";
+					$val = "'" . implode("', '", array_values($new_data)) . "'";
+					$query = "INSERT INTO `members` ($var) VALUES ($val)";
+				}
+				break;
+
+			case 'change':
+				if ($field && $value) {
+					$query = "UPDATE `members` SET `$field` = '$value' WHERE `id` = '$id'";
+				}
+				break;
+
+			case 'delete':
+				$query = "DELETE FROM `members`";
+				break;
+
+			case 'sessionID':
+				$query = "SELECT * FROM `members` WHERE `sessionID` = '$clan'";
+				break;
+		}
 		return self::query($query);
 	}
 
@@ -437,5 +452,25 @@ class Sql
 			$str = str_replace(chr(13), '', $str);
 		};
 		return $str;
+	}
+
+	public static function visit($id)
+	{
+		$today = new DateTime();
+		$date = $today->format('Y-m-d');
+		$time = $today->format('H:i:s');
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$cookie = session_id();
+		$browser = $_SERVER['HTTP_USER_AGENT'];
+		$visits = array();
+		$update = false;
+		if ($visitor = Sql::query("SELECT * FROM `visitors` WHERE `date` = '$date' AND `member` = '$id' AND `ip` = '$ip' AND `cookie` = '$cookie' AND `browser` = '$browser'")) {
+			$visits = json_decode($visitor['visits']);
+			$update = true;
+		}
+		$visits[] = $time;
+		$str_visits = json_encode($visits);
+		if ($update) $query = "UPDATE `visitors` SET `visits` = '$str_visits' WHERE `date` = '$date' AND `member` = '$id' AND `ip` = '$ip' AND `cookie` = '$cookie' AND `browser` = '$browser'";
+		else $query = "INSERT INTO `visitors` (`date`, `ip`, `cookie`, `member`, `visits`, `browser`) VALUES ('$date', '$ip', '$cookie', $id, '$str_visits', '$browser')";
 	}
 }

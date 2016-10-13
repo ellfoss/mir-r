@@ -7,6 +7,7 @@ var reload = browserSync.reload;
 var plumber = require('gulp-plumber');
 
 var paths = {
+	ico: './app/favicon.ico',
 	php: './app/**/*.php',
 	css: './app/**/*.css',
 	pug: './app/**/*.pug',
@@ -18,7 +19,7 @@ var paths = {
 };
 
 gulp.task('files', function(){
-	return gulp.src([paths.php, paths.css])
+	return gulp.src([paths.php, paths.css, paths.ico])
 		.pipe(plumber())
 		.pipe(gulp.dest('./dist/'))
 		.pipe(reload({stream:true}));
@@ -69,11 +70,12 @@ gulp.task('font', function(){
 
 gulp.task('browserSync', function(){
 	browserSync({
-		server: {
-			baseDir: './dist'
-		},
-		open: true,
-		notify: false
+		// server: {
+		// 	baseDir: './dist'
+		// },
+		// open: true,
+		// notify: false
+		proxy: 'warg'
 	});
 });
 

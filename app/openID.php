@@ -18,7 +18,7 @@ if(isset($_GET['action'])){
 		toLog('Action exit<br />');
 		setcookie('sessionID', session_id(), time() - 1209600);
 		session_destroy();
-		header('Location: index.php');
+		header('Location: index_.php');
 		mysqli_close($link);
 		exit;
 	};
@@ -43,8 +43,8 @@ if(isset($_GET['action'])){
 			if(isset($_GET['nickname'])) $_SESSION['nickname'] = $_GET['nickname'];
 		};
 	};
-	header('Location: index.php');
-}else header('Location: index.php');
+	header('Location: index_.php');
+}else header('Location: index_.php');
 mysqli_close($link);
 
 function toLog($data){
