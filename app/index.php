@@ -34,13 +34,13 @@ if ($id && $id != '') {
 if (isset($_SESSION['nickname']) && $name == null) $name = $_SESSION['nickname'];
 Sql::visit($id);
 
-$clan = new Clan(Clan::get_main_clan_id());
+$clan = Sql::clans(Clan::get_main_clan_id());
 
 $loader = file_get_contents('blocks/loader.html');
-$loader = str_replace('{TAG}', $clan->tag, $loader);
-$loader = str_replace('{NAME}', $clan->name, $loader);
-$loader = str_replace('{MOTTO}', $clan->motto, $loader);
-$loader = str_replace('{COLOR}', $clan->color, $loader);
+$loader = str_replace('{TAG}', $clan[0]['tag'], $loader);
+$loader = str_replace('{NAME}', $clan[0]['name'], $loader);
+$loader = str_replace('{MOTTO}', $clan[0]['motto'], $loader);
+$loader = str_replace('{COLOR}', $clan[0]['color'], $loader);
 
 echo $loader;
 

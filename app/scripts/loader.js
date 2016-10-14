@@ -3,7 +3,7 @@ $(document).ready(function () {
 		url: 'blocks/main.php',
 		type: 'post',
 		success: function (answer) {
-			$('#main').append(answer);
+			$('#main').html(answer);
 		}
 	});
 });

@@ -25,25 +25,26 @@ html(lang="ru")
 			| }
 	body
 		#loader
-			.logo
-				img(src='http://ru.wargaming.net/clans/media/clans/emblems/cl_445/19445/emblem_64x64.png')
-			.names
-				.tag(style='color:{COLOR}') [{TAG}]
-				.name {NAME}
-			.motto {MOTTO}
+			span
+				.logo
+					img(src='http://ru.wargaming.net/clans/media/clans/emblems/cl_445/19445/emblem_64x64.png')
+				.names
+					.tag(style='color:{COLOR}') [{TAG}]
+					.name {NAME}
+				.motto {MOTTO}
 
-			.spinner
-				.rect1
-				.rect2
-				.rect3
-				.rect4
-				.rect5
+				.spinner
+					.rect1
+					.rect2
+					.rect3
+					.rect4
+					.rect5
 
-		#main
+		#main {MAIN}
 
 	link(type='text/css' rel="stylesheet" href="styles/loader.css")
 	link(type='text/css' rel="stylesheet" href="//webfonts.ru/import/robotocondensed.css")
-	link(type='text/css' rel="stylesheet" href="styles/jquery-ui-1.9.1.custom.min.css")
+	link(type='text/css' rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/themes/smoothness/jquery-ui.css")
 	script(type='text/javascript' src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js")
 	script(type='text/javascript' src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.1/jquery-ui.min.js")
 	script(type='text/javascript' src="scripts/loader.js")

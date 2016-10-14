@@ -10,7 +10,7 @@ class Member
 {
 	public $id;
 	public $name;
-	public $rights;
+	public $rights = 'guest';
 	public $real_name;
 	public $reg_date;
 	public $check_clan;
@@ -42,13 +42,13 @@ class Member
 		'color' => 'color'
 	);
 
-	function __construct($id)
+	function __construct($id, $added = true)
 	{
 		$this->id = $id;
-		if (!$this->get_sql_data()) {
+		if (!$this->get_sql_data() && $added) {
 			$this->new = true;
 			$this->check_member();
-		}
+		} else $this->set_name();
 	}
 
 	public function get_sql_data()
@@ -65,6 +65,14 @@ class Member
 
 			return true;
 		} else return false;
+	}
+
+	public function set_name()
+	{
+		$id = $this->id;
+		if ($member = Api::member($this->id)) {
+			if ($member->$id) $this->name = $member->$id->nickname;
+		}
 	}
 
 	public function check_member()

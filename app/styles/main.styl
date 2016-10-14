@@ -1,0 +1,123 @@
+@charset "utf-8"
+
+background-color = hsl(0, 0%, 50%) //серый
+font-color = hsl(210, 1%, 70%) //светло-серый
+
+header-bot = hsl(0, 0%, 13%)
+header-top = hsl(0, 0%, 53%)
+button-color = hsl(0, 0%, 27%)
+button-border = hsl(0, 0%, 36%)
+button-bot = hsl(0, 0%, 7%)
+button-top = hsl(0, 0%, 53%)
+button-hover-bot = hsl(240, 100%, 23%)
+button-hover-top = hsl(200, 100%, 50%)
+button-active-color = hsl(0, 0%, 47%)
+button-active-bot = hsl(0, 0%, 27%)
+button-active-top = hsl(0, 0%, 87%)
+button-active-hover-color = hsl(60, 100%, 93%)
+button-active-hover-bot = hsl(37, 100%, 43%)
+button-active-hover-top = hsl(60, 100%, 93%)
+button-text = white;
+button-shadow = black;
+button-active-text = black;
+button-active-shadow = hsl(0, 0%, 87%);
+
+fullsize()
+	width 100%
+	height 100%
+
+.button
+	display inline-block
+	width 100px
+	height 50px
+	position relative
+	border-radius 5px
+	background button-color linear-gradient(to top, button-bot, button-top)
+	border 1px solid button-border
+	cursor pointer
+	&.game
+		width 80px
+		height 40px
+	&.active
+		background button-active-color linear-gradient(to top, button-active-bot, button-active-top)
+		.hover
+			background button-active-hover-color linear-gradient(to top, button-active-hover-bot, button-active-hover-top)
+		.text
+			span
+				color button-active-text
+				text-shadow 1px 1px button-active-shadow
+	.hover
+		opacity 0
+		fullsize()
+		border-radius 5px
+		background-image linear-gradient(to top, button-hover-bot, button-hover-top)
+		transition 700ms
+	.text
+		display table
+		fullsize()
+		position absolute
+		left 0
+		top 0
+		span
+			display table-cell
+			color button-text
+			text-align center
+			font-size 18px
+			font-weight bold
+			text-shadow 1px 1px 3px button-shadow
+	&:hover
+		.hover
+			opacity 1
+
+header
+	width 100%
+	text-align center
+	background-image linear-gradient(to top, header-bot, header-top)
+	div
+		display inline-block
+	.button
+		margin 5px 0
+	#logo
+		height 60px
+		position absolute
+		top 0
+		left 0
+		padding 10px 0 0 65px
+		background url('../images/emblem.png') no-repeat center left
+		a
+			div
+				display block
+				color white
+				text-align left
+				font-size 16px
+				span
+					position relative
+					top -1px
+					color #1b8719
+				&:first-child
+					white-space nowrap
+					color #F9D088
+					font-size 20px
+					font-weight 400
+					text-shadow 1px 1px #000
+			div:last-child
+				font-size 12px
+				color #bbb
+	#enter
+		position absolute
+		top 0
+		right 0
+		& > div
+			float right
+			margin 5px
+		#member
+			margin-top 17px
+			white-space nowrap
+			color #F9D088
+			font-size 20px
+			font-weight 400
+			text-shadow 1px 1px #000
+	#menu > .button
+		width 50px
+		height 50px
+
