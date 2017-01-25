@@ -1,3 +1,4 @@
+link(type='text/css' rel="stylesheet" href="styles/main.css")
 header
 	#logo
 		a(href='http://worldoftanks.ru/community/clans/19445-MIR-R/#wot&mt_order_by=-member_since' target='_blank')
@@ -11,11 +12,16 @@ header
 	#menu(type='buttonCheck' action='buttonAll')
 		.buttons(type="buttonRadio" action="buttonMain")
 			.button.active(menu='main') Главная
+			| {RIGHTS:ADMIN}
 			.button(menu='admin') Админка
+			| {/RIGHTS}
 			.button(menu='graph') Графики
 			.button(menu='stat') Статистика
+			| {RIGHTS:MEMBER}
 			.button(menu='event') События
+			| {/RIGHTS}
+		| {RIGHTS:ADMIN}
 		.button(menu='all') Все
+		| {/RIGHTS}
 
-link(type='text/css' rel="stylesheet" href="styles/main.css")
 script(type='text/javascript' src="scripts/main.js")

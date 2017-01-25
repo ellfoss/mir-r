@@ -15,6 +15,7 @@ if ($id) $member = new Member($id, false);
 $name = $_SESSION['nickname'];
 if ($member) Rights::set($member->rights);
 else Rights::set('guest');
+//Rights::set('admin');
 
 $clan = Sql::clans(Clan::get_main_clan_id());
 
@@ -27,5 +28,7 @@ $main = str_replace('{ENTER}', ($member ? 'Выход' : 'Вход'), $main);
 $main = str_replace('{RIGHTS}', ($member ? $member->rights : 'guest'), $main);
 $main = str_replace('{MEMBER}', ($member ? $member->id : ''), $main);
 $main = str_replace('{MEMBER_NAME}', ($member ? $member->name : ''), $main);
+$main = preg_replace('/{RIGHTS:ADMIN}(.*){\/RIGHTS}/sU', (Rights::admin() ? '$1' : ''), $main);
+$main = preg_replace('/{RIGHTS:MEMBER}(.*){\/RIGHTS}/sU', (Rights::member() ? '$1' : ''), $main);
 
 echo $main;

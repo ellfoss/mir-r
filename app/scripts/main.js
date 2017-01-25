@@ -1,3 +1,5 @@
+var sheets = [];
+
 $(document).ready(function(){
 	$.datepicker.regional['ru'] = {
 		closeText: 'Закрыть',
@@ -24,14 +26,21 @@ $(document).ready(function(){
 	};
 	$.datepicker.setDefaults($.datepicker.regional['ru']);
 
-	$('button').live('click', function () {
-		$(this).blur();
-	});
-	$('.button').each(function () {
-		$(this).html('<div class="hover"></div><div class="text"><span>' + $(this).html() + '</span></div>');
-	});
+	$('button').live('click', function () { $(this).blur(); });
+	$('.button').each(function () { $(this).html('<div class="hover"></div><div class="text"><span>' + $(this).html() + '</span></div>'); });
 
 
 	$('#loader').remove();
 	$('#main').css({display: 'block'});
 });
+
+var sheet = function(newSheet){
+	var name = newSheet || 'newSheet';
+	var index = 0;
+	var load = false;
+	var tables = [];
+
+	var loadSheet = function(){
+
+	}
+};

@@ -17,10 +17,10 @@ button-active-top = hsl(0, 0%, 87%)
 button-active-hover-color = hsl(60, 100%, 93%)
 button-active-hover-bot = hsl(37, 100%, 43%)
 button-active-hover-top = hsl(60, 100%, 93%)
-button-text = white;
+button-text = hsl(0, 0%, 83%);
 button-shadow = black;
-button-active-text = black;
-button-active-shadow = hsl(0, 0%, 87%);
+button-active-text = hsl(0, 0%, 17%);
+button-active-shadow = hsl(180, 0%, 70%);
 
 fullsize()
 	width 100%
@@ -60,6 +60,7 @@ fullsize()
 		top 0
 		span
 			display table-cell
+			position relative
 			color button-text
 			text-align center
 			font-size 18px
@@ -68,6 +69,13 @@ fullsize()
 	&:hover
 		.hover
 			opacity 1
+		.text
+			span
+				text-shadow 2px 2px 3px button-shadow
+		&.active
+			.text
+				span
+					text-shadow 2px 2px button-active-shadow
 
 header
 	width 100%
@@ -83,7 +91,8 @@ header
 		top 0
 		left 0
 		padding 10px 0 0 65px
-		background url('../images/emblem.png') no-repeat center left
+		background url('../images/emblem.png') no-repeat 5px center
+		background-size auto 80%
 		a
 			div
 				display block
